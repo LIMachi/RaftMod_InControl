@@ -5,6 +5,8 @@ using System.Reflection;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.IO;
+using RaftModLoader;
+using UnityEngine;
 
 [HarmonyPatch(typeof(RandomDropper))]
 public class RandomLootExtension : Mod
@@ -16,11 +18,15 @@ public class RandomLootExtension : Mod
 
     Harmony harmony;
 
+    static FieldInfo IntervalField;
+    static FieldInfo RandomDropperField;
+
     public void Start()
     {
         (harmony = new Harmony("LIMachi.RandomLootExtension")).PatchAll();
 
-        ERandomizer.Start();
+        IntervalField = AccessTools.Field(typeof(RandomDropper), "amountOfItems");
+        RandomDropperField = AccessTools.Field(typeof(RandomDropper), "randomDropperAsset");
 
         if (!File.Exists(jsonPath))
         {
@@ -29,8 +35,8 @@ public class RandomLootExtension : Mod
  @"{
     ""Pickup_Floating_Barrel"": {
         ""items"": {
-            ""Sand"": 0.1,
-            ""Clay"": 0.1
+            ""Sand"": 5,
+            ""Clay"": 5
         }
     }
 }");
@@ -47,12 +53,12 @@ public class RandomLootExtension : Mod
         ""amount"": { ""min"": 8, ""max"": 12 }, //replace the default random amount with this new range (will generate between 8 and 12 items, instead of the default 4 to 6 items)
         ""replace"": true, //if present and set to true, remove the default loot table and replace it with ours (if not present or false, keep the default loot table and extend it with ours)
         ""items"": { //map of item names and weight (weight are not persent chance of getting an item, but the chance relative to other items, if there is 2 items at weight 0.2, 1 item at weight 0.1 and we add ours with a weight of 0.1, we have 1 in 6 chance to be selected, not 10%)
-            ""Sand"": 0.5,
-            ""Clay"": 0.5
+            ""Sand"": 5, //the default total weight of a barrel is 212, so to have around %50 chance to get our item, it would need a weight of 106! (the Raw_Potato as a weight of 7 so about 3% for example)
+            ""Clay"": 5 //adding 5 sand and 5 clay means we have a total weight of 222, so we have about 2.25% chance of clay/sand per roll of the barrel
         }
     },
-    ""Pickup_Floating_Box"": {}, //all the fields are optional, this would do nothing to the floating crate
-    ""Pickup_Landmark_LandmarkCrateRaft"": { //this is the name of the chest you can find on drifting rafts
+    ""Pickup_Floating_Box"": {}, //all the fields are optional, this would do nothing to the floating crate (the default total weight is the same as the barrel, so 212)
+    ""Pickup_Landmark_LandmarkCrateRaft"": { //this is the name of the chest you can find on drifting rafts (the default total weight is 159)
         ""amount"": { ""min"": 20, ""max"": 30 },
         ""items"": {
             ""Battery"": 1
@@ -91,6 +97,24 @@ public class RandomLootExtension : Mod
         public Range amount; //optional, if not set use the same values as the vanilla dropper
         public bool replace; //if true, replace the loot table of the dropper by this one, if false, keep the original items and add the items listed
         public Dictionary<string, float> items; //list of pairs of item name and weight to be dropped (contrary to a percent chance, weight is relative to other weigths, a weight of 1 if there is another item with a weight of 0.5 means there is 2/3 chance to get the first item)
+
+        public static JRandomizer fromDropper(RandomDropper dropper)
+        {
+            var o = new JRandomizer();
+            if (IntervalField != null && RandomDropperField != null && IntervalField.GetValue(dropper) is Interval_Int interval && RandomDropperField.GetValue(dropper) is SO_RandomDropper asset && asset.randomizer is Randomizer randomizer)
+            {
+                o.amount = new Range
+                {
+                    min = interval.minValue,
+                    max = interval.maxValue
+                };
+                o.replace = true;
+                o.items = new Dictionary<string, float>();
+                foreach (var ri in randomizer.items)
+                    o.items.Add(((Item_Base)ri.obj).name, ri.weight);
+            }
+            return o;
+        }
     }
 
     class ERandomizer
@@ -126,20 +150,11 @@ public class RandomLootExtension : Mod
             return extend && (items == null || items.Count == 0);
         }
 
-        static FieldInfo IntervalField;
-        static FieldInfo RandomDropperField;
-
-        public static void Start()
-        {
-            IntervalField = AccessTools.Field(typeof(RandomDropper), "amountOfItems");
-            RandomDropperField = AccessTools.Field(typeof(RandomDropper), "randomDropperAsset");
-        }
-
         public Item_Base[] patch(RandomDropper dropper)
         {
-            if (IntervalField.GetValue(dropper) is Interval_Int interval)
+            if (IntervalField != null && IntervalField.GetValue(dropper) is Interval_Int interval)
             {
-                if (IntervalField != null && amount != null && (amount.min != null || amount.max != null))
+                if (amount != null && (amount.min != null || amount.max != null))
                 {
                     if (amount.min != null)
                         interval.minValue = (int)amount.min;
@@ -166,10 +181,22 @@ public class RandomLootExtension : Mod
         }
     }
 
+    protected static bool loging = false;
+
+    [ConsoleCommand(name: "logRandomDroppers", docs: "enable/disable loging of RandomDropper pickups in the console as one liner json")]
+    public static void LogRandomDroppers()
+    {
+        loging = !loging;
+        Debug.Log("Random droppers loot loger: " + (loging ? "enabled" : "disabled"));
+    }
+
+
     [HarmonyPrefix]
     [HarmonyPatch("GetRandomItems")]
     static bool Prefix_GetRandomItems(RandomDropper __instance, ref Item_Base[] __result)
     {
+        if (loging)
+            Debug.Log(__instance.gameObject.name + ": " + JsonConvert.SerializeObject(JRandomizer.fromDropper(__instance)));
         if (__instance != null && __instance.gameObject != null && __instance.gameObject.GetInstanceID() != 0)
             foreach (var p in RandomExtension)
                 if (__instance.gameObject.name.Contains(p.Key)) {
