@@ -1,0 +1,14 @@
+{
+  "name": "RandomLootExtension",
+  "author": "LIMachi",
+  "description": "Allow you to change the loot of random pickable items like Barrel, Crates, Drifting Raft Chects, etc... using a json file present in the ModData folder.",
+  "version": "1.0",
+  "license": "GNU AGPLv3",
+  "icon": "icon.png",
+  "banner": "banner.jpg",
+  "gameVersion": "1.0",
+  "requiredByAllPlayers": false,
+  "updateUrl": "https://www.raftmodding.com/api/v1/mods/random_loot_extension/version.txt",
+  "isModPermanent": false,
+  "excludedFiles": []
+}
