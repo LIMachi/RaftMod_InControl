@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.IO;
-using UnityEngine;
 
 [HarmonyPatch(typeof(RandomDropper))]
 public class RandomLootExtension : Mod
@@ -136,38 +135,51 @@ public class RandomLootExtension : Mod
             RandomDropperField = AccessTools.Field(typeof(RandomDropper), "randomDropperAsset");
         }
 
-        public void patch(RandomDropper dropper)
+        public Item_Base[] patch(RandomDropper dropper)
         {
-            if (IntervalField != null && amount != null && (amount.min != null || amount.max != null) && IntervalField.GetValue(dropper) is Interval_Int interval) {
-                if (amount.min != null)
-                    interval.minValue = (int)amount.min;
-                if (amount.max != null)
-                    interval.maxValue = (int)amount.max;
-            }
-
-            if (RandomDropperField != null && RandomDropperField.GetValue(dropper) is SO_RandomDropper asset && asset.randomizer is Randomizer randomizer)
+            if (IntervalField.GetValue(dropper) is Interval_Int interval)
             {
-                if (extend)
+                if (IntervalField != null && amount != null && (amount.min != null || amount.max != null))
                 {
-                    var l = randomizer.items.ToList();
-                    l.AddRange(items);
-                    randomizer.items = l.ToArray();
+                    if (amount.min != null)
+                        interval.minValue = (int)amount.min;
+                    if (amount.max != null)
+                        interval.maxValue = (int)amount.max;
                 }
-                else
-                    randomizer.items = items.ToArray();
+
+                if (RandomDropperField != null && RandomDropperField.GetValue(dropper) is SO_RandomDropper asset && asset.randomizer is Randomizer randomizer)
+                {
+                    Randomizer o = new Randomizer();
+                    if (extend)
+                    {
+                        var l = randomizer.items.ToList();
+                        l.AddRange(items);
+                        o.items = l.ToArray();
+                    }
+                    else
+                        o.items = items.ToArray();
+                    o.lastRandomizedIndex = randomizer.lastRandomizedIndex;
+                    return o.GetRandomItems<Item_Base>(interval.GetRandomValue());
+                }
             }
+            return null;
         }
     }
 
-    //TODO: check if patch is already applied (which could bias the probability of the added items in extend mode)
     [HarmonyPrefix]
     [HarmonyPatch("GetRandomItems")]
-    static bool Prefix_GetRandomItems(RandomDropper __instance)
+    static bool Prefix_GetRandomItems(RandomDropper __instance, ref Item_Base[] __result)
     {
         if (__instance != null && __instance.gameObject != null && __instance.gameObject.GetInstanceID() != 0)
             foreach (var p in RandomExtension)
-                if (__instance.gameObject.name.Contains(p.Key))
-                    p.Value.patch(__instance);
+                if (__instance.gameObject.name.Contains(p.Key)) {
+                    var t = p.Value.patch(__instance);
+                    if (t != null)
+                    {
+                        __result = t;
+                        return false;
+                    }
+                }
         return true;
     }
 }
