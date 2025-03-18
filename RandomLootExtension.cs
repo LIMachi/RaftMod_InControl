@@ -29,8 +29,8 @@ public class RandomLootExtension : Mod
  @"{
     ""Pickup_Floating_Barrel"": {
         ""items"": {
-            ""Sand"": 0.1,
-            ""Clay"": 0.1
+            ""Sand"": 5,
+            ""Clay"": 5
         }
     }
 }");
@@ -47,12 +47,12 @@ public class RandomLootExtension : Mod
         ""amount"": { ""min"": 8, ""max"": 12 }, //replace the default random amount with this new range (will generate between 8 and 12 items, instead of the default 4 to 6 items)
         ""replace"": true, //if present and set to true, remove the default loot table and replace it with ours (if not present or false, keep the default loot table and extend it with ours)
         ""items"": { //map of item names and weight (weight are not persent chance of getting an item, but the chance relative to other items, if there is 2 items at weight 0.2, 1 item at weight 0.1 and we add ours with a weight of 0.1, we have 1 in 6 chance to be selected, not 10%)
-            ""Sand"": 0.5,
-            ""Clay"": 0.5
+            ""Sand"": 5, //the default total weight of a barrel is 212, so to have around %50 chance to get our item, it would need a weight of 106! (the Raw_Potato as a weight of 7 so about 3% for example)
+            ""Clay"": 5 //adding 5 sand and 5 clay means we have a total weight of 222, so we have about 2.25% chance of clay/sand per roll of the barrel
         }
     },
-    ""Pickup_Floating_Box"": {}, //all the fields are optional, this would do nothing to the floating crate
-    ""Pickup_Landmark_LandmarkCrateRaft"": { //this is the name of the chest you can find on drifting rafts
+    ""Pickup_Floating_Box"": {}, //all the fields are optional, this would do nothing to the floating crate (the default total weight is the same as the barrel, so 212)
+    ""Pickup_Landmark_LandmarkCrateRaft"": { //this is the name of the chest you can find on drifting rafts (the default total weight is 159)
         ""amount"": { ""min"": 20, ""max"": 30 },
         ""items"": {
             ""Battery"": 1
