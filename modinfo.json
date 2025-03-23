@@ -1,8 +1,8 @@
 {
-  "name": "RandomLootExtension",
+  "name": "InControl",
   "author": "LIMachi",
-  "description": "Allow you to change the loot of random pickable items like Barrel, Crates, Drifting Raft Chects, etc... using a json file present in the ModData folder.",
-  "version": "1.2.0",
+  "description": "Change a lot of things (like drops and crafts) using json files",
+  "version": "ic-1.0.0",
   "license": "GNU AGPLv3",
   "icon": "icon.png",
   "banner": "banner.jpg",
