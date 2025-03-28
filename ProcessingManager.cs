@@ -26,31 +26,22 @@ namespace InControl
         };
         
         private bool _active = false;
-        public static string DefaultRecipes = @"{
-    ""PlasticCup_Empty"": {
-  	    ""cook_time"": 30,
-  	    ""result"": ""Plastic"",
-  	    ""amount"": 3,
-  	    ""raw_model"": { ""raw"": ""ExplosiveGoo"" },
-        ""cooked_model"": {
-  		    ""raw"": ""Sand"",
-  		    ""cooked"": false
-  	    },
-        ""processing_kind"": ""Smelting""
-    }
-}";
+        public static string DefaultRecipes = @"{}";
         
         public static string Example = @"{
-    ""PlasticCup_Empty"": { //name of the item to process
-  	    ""cook_time"": 30, //time (in seconds) it takes to process the item
-  	    ""result"": ""Plastic"", //what item is created by the processing
-  	    ""amount"": 3, //how much of that item
-  	    ""raw_model"": { ""raw"": ""ExplosiveGoo"" }, //'model' to use while processing (will load the model associated with this item), if 'cooked' is true, it will use the cooked model instead
-        ""cooked_model"": {
-  		    ""raw"": ""Sand"",
-  		    ""cooked"": false //this field can be used to select the raw or cooked variant of the model (by default will use the cooked model)
-  	    },
-        ""processing_kind"": ""Smelting"" //should match the name declared in the ProcessingBlocks file
+    ""CircuitBoard"": { //name of the item to process
+        ""cook_time"": 90, //time (in seconds) it takes to process the item
+        ""result"": ""CopperIngot"", //what item is created by the processing
+        ""amount"": 1, //how much of that item
+        ""raw_model"": {
+            ""raw"": ""SeaVine"", //'model' to use while processing (will load the model associated with this item)
+            ""cooked"": true //if 'cooked' is true, it will use the cooked model instead
+        },
+      ""cooked_model"": {
+            ""raw"": ""CopperOre""
+            //if cooked is omitted, it will default to true for ""cooked_model"" and false for ""raw_model""
+      },
+      ""processing_kind"": ""Smelting"" //should match the name declared in the ProcessingBlocks file
     }
 }";
 
@@ -100,6 +91,8 @@ namespace InControl
                          FileUtils.ReadOrCreateDefault(File, DefaultRecipes)))
             {
                 Overrides.Add(e.Key, e.Value.Transform());
+                if (e.Key.settings_cookable.CookingResult.item != null && KindOfCookingStand(e.Key).name.Contains("Purif"))
+                    Debug.LogWarning("Replacing default processing for " + e.Key);
                 ProcessingKinds.Add(e.Key, e.Value._processing_kind);
                 if (e.Value._processing_kind.has_custom_processing_models)
                     Models.Add(e.Key, (e.Value.raw_model, e.Value.cooked_model));
@@ -310,6 +303,8 @@ namespace InControl
                     {
                         if (itemConnection.cookableItem == raw.raw)
                         {
+                            if (cooked.raw == raw.raw && (cooked.cooked ?? true) == (raw.cooked ?? false))
+                                continue;
                             if (raw.cooked ?? false)
                                 itemConnection.SetCookedState(false);
                             else
@@ -354,6 +349,8 @@ namespace InControl
                         }
                         if (itemConnection.cookableItem == cooked.raw)
                         {
+                            if (cooked.raw == raw.raw && (cooked.cooked ?? true) == (raw.cooked ?? false))
+                                continue;
                             if (cooked.cooked ?? true)
                                 itemConnection.SetCookedState(false);
                             else
