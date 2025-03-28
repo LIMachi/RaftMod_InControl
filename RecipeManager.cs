@@ -11,23 +11,23 @@ namespace InControl
         public static string DefaultRecipes = "{}";
 
         public static string Example = @"{
-""PlasticBottle_Empty"": {
-    ""require_research"": false, //make the plastic bottle available immediately (does not require to research plastic or vine goo)
-    ""amount_to_craft"": 2, //create 2 bottles per craft
-    ""category"": ""Tools"", //changes the category of the item (valid: Tools, Other, Resources, Decorations, Equipment, Nothing, FoodWater, Navigation, CreativeMode, Hidden, Weapons, Skin)
-    ""sub_category"": ""Axes"", //sub category, too many valid values to list them here, use the command `dumpCurrentRecipes`
-    ""sub_category_order"": 3, //if the sub category is the row, then the order is the column
-    ""recipe"": [ //a recipe is a list of amounts and list of interchangeable items
-      {
-        ""items"": [ ""Plastic"" ],
-        ""amount"": 6
-      },
-      {
-        ""items"": [ ""VineGoo"", ""Rope"" ], //here the craft will accept either 4 goo or 4 ropes (plus the 6 plastic listed above)
-        ""amount"": 4
-      }
-    ]
-  }
+    ""PlasticBottle_Empty"": {
+        ""require_research"": false, //make the plastic bottle available immediately (does not require to research plastic or vine goo)
+        ""amount_to_craft"": 2, //create 2 bottles per craft
+        ""category"": ""Tools"", //changes the category of the item (valid: Tools, Other, Resources, Decorations, Equipment, Nothing, FoodWater, Navigation, CreativeMode, Hidden, Weapons, Skin)
+        ""sub_category"": ""Axes"", //sub category, too many valid values to list them here, use the command `dumpCurrentRecipes`
+        ""sub_category_order"": 3, //if the sub category is the row, then the order is the column
+        ""recipe"": [ //a recipe is a list of amounts and list of interchangeable items
+            {
+                ""items"": [ ""Plastic"" ],
+                ""amount"": 6
+            },
+            {
+                ""items"": [ ""VineGoo"", ""Rope"" ], //here the craft will accept either 4 goo or 4 ropes (plus the 6 plastic listed above)
+                ""amount"": 4
+            }
+        ]
+    }
 }";
         public readonly string File;
 
@@ -115,6 +115,9 @@ namespace InControl
                     if (o.AmountToCraft != tc)
                         Traverse.Create(o).Field("amountToCraft").SetValue(tc);
                     o.NewCost = recipe;
+                    foreach (var c in o.NewCost)
+                        if (c.amount <= 0)
+                            c.amount = 1;
                     if (category != null && category != o.CraftingCategory)
                         Traverse.Create(o).Field("craftingCategory").SetValue(category);
                     if (sub_category != null && sub_category != o.SubCategory)

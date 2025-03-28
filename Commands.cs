@@ -23,8 +23,30 @@ namespace InControl
         [ConsoleCommand(name: "inControl_dumpCurrentRecipes")]
         public static void DumpCurrentRecipes(string[] args)
         {
-            FileUtils.WriteEntireFile("Recipes.dump.json", InControl.RecipeManager.Dump());
-            Debug.Log("Recipes saved to: " + FileUtils.ModDataPath("Recipes.dump.json"));
+            FileUtils.WriteEntireFile("recipes.dump.json", InControl.RecipeManager.Dump());
+            Debug.Log("Recipes saved to: " + FileUtils.ModDataPath("recipes.dump.json"));
+        }
+        
+        [ConsoleCommand(name: "inControl_toggleCustomProcessing")]
+        public static void ToggleCustomProcessing(string[] args)
+        {
+            InControl.ProcessingManager.Enable(!InControl.ProcessingManager.Active);
+            Debug.Log("Custom Processing: " + (InControl.ProcessingManager.Active ? "Enabled" : "Disabled"));
+        }
+
+        [ConsoleCommand(name: "inControl_reloadCustomProcessing")]
+        public static void ReloadCustomProcessing(string[] args)
+        {
+            var active = InControl.ProcessingManager.Active;
+            InControl.ProcessingManager.Load();
+            InControl.ProcessingManager.Enable(active);
+        }
+
+        [ConsoleCommand(name: "inControl_dumpCurrentProcessing")]
+        public static void DumpCurrentProcessing(string[] args)
+        {
+            FileUtils.WriteEntireFile("processing.dump.json", InControl.ProcessingManager.Dump());
+            Debug.Log("Processing saved to: " + FileUtils.ModDataPath("processing.dump.json"));
         }
         
         [ConsoleCommand(name: "inControl_toggleCustomDroppers")]
